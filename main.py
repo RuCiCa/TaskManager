@@ -1,9 +1,12 @@
 import sys
 import os
+
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget, 
                              QVBoxLayout, QScrollArea, QPushButton, QLabel)
+
 from core.manager import TaskManager
 from ui.task_card import TaskCard
+from ui.task_dialog import TaskDialog
 
 
 def load_stylesheet(file_path):
@@ -61,6 +64,10 @@ class MainWindow(QMainWindow):
 
         self.refresh_tasks()
 
+        self.btn_add_task = QPushButton("＋ 發布新任務")
+        self.btn_add_task.clicked.connect(self.show_add_task_dialog)
+        self.task_list_layout.insertWidget(0, self.btn_add_task) # 放在最上面
+
     def refresh_tasks(self):
         """清除舊卡片並重新讀取"""
         # 1. 清除舊 UI
@@ -88,6 +95,13 @@ class MainWindow(QMainWindow):
         <p>完成率: {stats['completion_rate']:.1f}%</p>
         """
         self.stats_label.setText(text)
+
+    def show_add_task_dialog(self):
+        dialog = TaskDialog(self)
+        if dialog.exec(): # 如果使用者點擊「發布」
+            task_data = dialog.get_data()
+            self.manager.publish_new_task(task_data)
+            self.refresh_tasks() # 重新整理列表
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)
