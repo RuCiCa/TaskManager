@@ -1,4 +1,4 @@
-from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, QProgressBar
+from PyQt6.QtWidgets import QFrame, QVBoxLayout, QHBoxLayout, QLabel, QPushButton
 from PyQt6.QtCore import Qt
 
 class TaskCard(QFrame):
@@ -7,59 +7,81 @@ class TaskCard(QFrame):
         self.task = task_obj
         self.manager = manager
         self.setFrameShape(QFrame.Shape.StyledPanel)
-        self.setLineWidth(2)
         self.init_ui()
 
     def init_ui(self):
-        layout = QVBoxLayout()
+        self.main_layout = QVBoxLayout()
         
-        # 標題與狀態
+        # 1. 標題與狀態
         title_row = QHBoxLayout()
-        title_label = QLabel(f"<b>{self.task.title}</b>")
-        status_label = QLabel(f"[{self.task.status}]")
-        title_row.addWidget(title_label)
+        self.title_label = QLabel(f"<b>{self.task.title}</b>")
+        
+        status_colors = {
+            'PUBLISHED': '#f9e2af',
+            'ACCEPTED': '#89dceb',
+            'COMPLETED': '#a6e3a1',
+            'FAILED': '#f38ba8'
+        }
+        color = status_colors.get(self.task.status, '#cdd6f4')
+        self.status_label = QLabel(f"<b style='color: {color};'>[{self.task.status}]</b>")
+        
+        title_row.addWidget(self.title_label)
         title_row.addStretch()
-        title_row.addWidget(status_label)
-        layout.addLayout(title_row)
+        title_row.addWidget(self.status_label)
+        self.main_layout.addLayout(title_row)
 
-        # 描述
-        desc_label = QLabel(self.task.content)
-        desc_label.setWordWrap(True)
-        layout.addWidget(desc_label)
+        # 2. 內容
+        self.content_label = QLabel(self.task.content)
+        self.content_label.setWordWrap(True)
+        self.main_layout.addWidget(self.content_label)
 
-        # 進度顯示 (計數型或計時型)
-        if self.task.status == 'ACCEPTED':
-            if hasattr(self.task, 'target_count'): # 計數型
-                self.progress = QLabel(f"進度: {self.task.progress_text}")
-                layout.addWidget(self.progress)
-                
-                btn_inc = QPushButton("完成一次 (+1)")
-                btn_inc.clicked.connect(self.on_increment)
-                layout.addWidget(btn_inc)
-            
-            elif hasattr(self.task, 'total_seconds'): # 計時型
-                self.time_label = QLabel(f"剩餘時間: {self.task.time_left_text}")
-                layout.addWidget(self.time_label)
-                # 計時器的 UI 邏輯可以之後在 Main 裡面跑，這裡先留顯示
+        # 3. 進度/時間顯示區
+        self.progress_label = QLabel("")
+        self.main_layout.addWidget(self.progress_label)
+        
+        # 4. 功能按鈕區
+        self.btn_layout = QHBoxLayout()
+        self.setup_buttons()
+        self.main_layout.addLayout(self.btn_layout)
 
-        # 功能按鈕
-        btn_layout = QHBoxLayout()
+        self.setLayout(self.main_layout)
+        self.update_ui_display()
+
+    def setup_buttons(self):
+        """根據狀態建立按鈕"""
+        # 先清除舊按鈕
+        for i in reversed(range(self.btn_layout.count())): 
+            self.btn_layout.itemAt(i).widget().setParent(None)
+
         if self.task.status == 'PUBLISHED':
             btn_accept = QPushButton("接受任務")
             btn_accept.clicked.connect(self.on_accept)
-            btn_layout.addWidget(btn_accept)
+            self.btn_layout.addWidget(btn_accept)
             
-            btn_reject = QPushButton("拒絕")
-            btn_layout.addWidget(btn_reject)
-        
-        layout.addLayout(btn_layout)
-        self.setLayout(layout)
+        elif self.task.status == 'ACCEPTED':
+            if hasattr(self.task, 'target_count'): # 計數型
+                btn_inc = QPushButton("完成一次 (+1)")
+                btn_inc.clicked.connect(self.on_increment)
+                self.btn_layout.addWidget(btn_inc)
+
+    def update_ui_display(self):
+        """更新文字顯示（計時器每秒會呼叫這個）"""
+        if self.task.status == 'ACCEPTED':
+            if hasattr(self.task, 'target_count'): # 計數型
+                self.progress_label.setText(f"📊 進度: {self.task.progress_text}")
+            elif hasattr(self.task, 'total_seconds'): # 計時型
+                self.progress_label.setText(f"⏳ 剩餘時間: {self.task.time_left_text}")
+        else:
+            self.progress_label.setText("")
 
     def on_accept(self):
         self.manager.accept_task(self.task.id)
-        # 這裡之後會呼叫父視窗重新整理介面
-        print(f"任務 {self.task.id} 已接受")
+        # 接受後通知主視窗刷新，才會切換按鈕
+        self.window().refresh_tasks()
 
     def on_increment(self):
         if self.manager.increment_counting_task(self.task.id):
-            print(f"任務 {self.task.id} 進度更新")
+            self.update_ui_display()
+            # 如果因為這次點擊而完成了，刷新列表
+            if self.task.status == 'COMPLETED':
+                self.window().refresh_tasks()

@@ -3,10 +3,12 @@ import os
 
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget, 
                              QVBoxLayout, QScrollArea, QPushButton, QLabel)
+from PyQt6.QtCore import QTimer
 
 from core.manager import TaskManager
 from ui.task_card import TaskCard
 from ui.task_dialog import TaskDialog
+from ui.history_tab import HistoryTab
 
 
 def load_stylesheet(file_name):
@@ -32,7 +34,16 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("遊戲化任務系統 v1.0")
         self.resize(500, 700)
         
+        # 初始化 UI
         self.init_ui()
+
+        # 設定計時器 (每 1 秒執行一次)
+        self.timer = QTimer()
+        self.timer.timeout.connect(self.on_timer_tick)
+        self.timer.start(1000)
+
+        self.refresh_tasks()
+
         # 套用外部樣式表
         style_content = load_stylesheet("style.qss")
         if style_content:
@@ -45,14 +56,18 @@ class MainWindow(QMainWindow):
         # 頁籤 1: 目前任務
         self.task_list_tab = QWidget()
         self.task_list_layout = QVBoxLayout()
-        
-        # 滾動區域 (任務多時可以捲動)
+
+        self.btn_add_task = QPushButton("＋ 發布新任務")
+        self.btn_add_task.clicked.connect(self.show_add_task_dialog)
+        self.task_list_layout.insertWidget(0, self.btn_add_task) # 放在最上面
+
+        # 滾動區域 
         scroll = QScrollArea()
         scroll.setWidgetResizable(True)
         self.scroll_content = QWidget()
         self.scroll_layout = QVBoxLayout(self.scroll_content)
         scroll.setWidget(self.scroll_content)
-        
+
         self.task_list_layout.addWidget(scroll)
         
         btn_refresh = QPushButton("重新整理任務列表")
@@ -62,48 +77,52 @@ class MainWindow(QMainWindow):
         self.task_list_tab.setLayout(self.task_list_layout)
 
         # 頁籤 2: 統計報表
-        self.stats_tab = QWidget()
-        self.stats_layout = QVBoxLayout()
-        self.stats_label = QLabel("統計數據載入中...")
-        self.stats_layout.addWidget(self.stats_label)
-        self.stats_tab.setLayout(self.stats_layout)
+        self.history_tab = HistoryTab(self.manager)
 
         self.tabs.addTab(self.task_list_tab, "目前任務")
         self.tabs.addTab(self.stats_tab, "歷史紀錄與統計")
 
         self.refresh_tasks()
 
-        self.btn_add_task = QPushButton("＋ 發布新任務")
-        self.btn_add_task.clicked.connect(self.show_add_task_dialog)
-        self.task_list_layout.insertWidget(0, self.btn_add_task) # 放在最上面
 
     def refresh_tasks(self):
         """清除舊卡片並重新讀取"""
-        # 1. 清除舊 UI
+        # 清除舊 UI
         for i in reversed(range(self.scroll_layout.count())): 
             self.scroll_layout.itemAt(i).widget().setParent(None)
 
-        # 2. 從 Manager 拿資料
+        # 從 Manager 拿資料
         tasks = self.manager.get_all_tasks(status_filter=['PUBLISHED', 'ACCEPTED'])
         
-        # 3. 建立新卡片
+        # 建立新卡片
         for t in tasks:
             card = TaskCard(t, self.manager)
             self.scroll_layout.addWidget(card)
         
-        self.scroll_layout.addStretch() # 讓卡片靠上對齊
-        self.update_stats()
+        self.scroll_layout.addStretch() 
+        # 同步刷新歷史頁籤
+        if hasattr(self, 'history_tab'):
+            self.history_tab.refresh()
 
-    def update_stats(self):
-        stats = self.manager.get_statistics()
-        text = f"""
-        <h2>任務統計</h2>
-        <p>總發布次數: {stats['total']}</p>
-        <p>已完成: {stats['completed']}</p>
-        <p>已失敗: {stats['failed']}</p>
-        <p>完成率: {stats['completion_rate']:.1f}%</p>
-        """
-        self.stats_label.setText(text)
+    def on_timer_tick(self):
+        """每秒鐘觸發一次，檢查並更新計時任務"""
+        # 遍歷 scroll_layout 裡所有的 TaskCard
+        for i in range(self.scroll_layout.count()):
+            item = self.scroll_layout.itemAt(i)
+            if item and item.widget():
+                card = item.widget()
+                # 如果卡片是 TaskCard 且 任務正在進行中 (ACCEPTED) 且 是計時型
+                if isinstance(card, TaskCard) and card.task.status == 'ACCEPTED':
+                    if hasattr(card.task, 'tick'): # 檢查是否有 tick 方法 (計時型任務才有)
+                        if card.task.tick(1): # 減少 1 秒
+                            # 更新資料庫
+                            self.manager.update_timing_task(card.task.id, card.task.remaining_seconds)
+                            # 更新卡片顯示
+                            card.update_ui_display()
+                            
+                            # 如果時間到完成了，刷新列表
+                            if card.task.status == 'COMPLETED':
+                                self.refresh_tasks()
 
     def show_add_task_dialog(self):
         dialog = TaskDialog(self)
@@ -111,6 +130,8 @@ class MainWindow(QMainWindow):
             task_data = dialog.get_data()
             self.manager.publish_new_task(task_data)
             self.refresh_tasks() # 重新整理列表
+
+    
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

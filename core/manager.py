@@ -65,6 +65,15 @@ class TaskManager:
         if remaining_seconds <= 0:
             self.db.update_task_status(task_id, 'COMPLETED')
 
+    def get_history_tasks(self):
+        """取得所有已結束的任務 (COMPLETED, FAILED)"""
+        raw_tasks = self.db.get_all_tasks()
+        history = []
+        for data in raw_tasks:
+            if data['status'] in ['COMPLETED', 'FAILED']:
+                history.append(self._create_task_instance(data))
+        return history
+
     def get_statistics(self):
         """獲取簡易統計數據"""
         tasks = self.db.get_all_tasks()

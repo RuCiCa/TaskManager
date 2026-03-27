@@ -29,4 +29,30 @@ QPushButton:hover {
     background-color: #b4befe;
 }
 
-/* 這裡可以繼續增加更多元件樣式... */
+/* 表格整體樣式 */
+QTableWidget {
+    background-color: #1e1e2e;
+    gridline-color: #45475a;
+    border: none;
+    border-radius: 8px;
+}
+
+/* 表頭樣式 */
+QHeaderView::section {
+    background-color: #313244;
+    color: #89b4fa;
+    padding: 5px;
+    border: 1px solid #45475a;
+    font-weight: bold;
+}
+
+/* 統計摘要文字 */
+#StatsSummary {
+    font-size: 16px;
+    font-weight: bold;
+    color: #a6e3a1; /* 亮綠色 */
+    padding: 10px;
+    background-color: #313244;
+    border-radius: 10px;
+    margin-bottom: 10px;
+}
