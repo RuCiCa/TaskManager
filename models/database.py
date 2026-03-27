@@ -79,6 +79,15 @@ class DatabaseManager:
             cursor.execute("SELECT * FROM tasks ORDER BY publish_time DESC")
             return [dict(row) for row in cursor.fetchall()]
 
+    def get_task_by_id(self, task_id):
+        """根據 ID 取得單一任務資料"""
+        with self.get_connection() as conn:
+            conn.row_factory = sqlite3.Row
+            cursor = conn.cursor()
+            cursor.execute("SELECT * FROM tasks WHERE id = ?", (task_id,))
+            row = cursor.fetchone()
+            return dict(row) if row else None
+
     def update_task_status(self, task_id, status):
         """更新任務狀態 (接受、完成、失敗)"""
         now = datetime.now().strftime("%Y-%m-%d %H:%M:%S") if status == 'COMPLETED' else None
