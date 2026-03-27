@@ -1,8 +1,18 @@
 import sys
+import os
 from PyQt6.QtWidgets import (QApplication, QMainWindow, QTabWidget, QWidget, 
                              QVBoxLayout, QScrollArea, QPushButton, QLabel)
 from core.manager import TaskManager
 from ui.task_card import TaskCard
+
+
+def load_stylesheet(file_path):
+    """讀取 QSS 檔案內容"""
+    if os.path.exists(file_path):
+        with open(file_path, "r", encoding="utf-8") as f:
+            return f.read()
+    return ""
+
 
 class MainWindow(QMainWindow):
     def __init__(self):
@@ -12,6 +22,9 @@ class MainWindow(QMainWindow):
         self.resize(500, 700)
         
         self.init_ui()
+        # 套用外部樣式表
+        style_path = os.path.join("resources", "styles", "style.qss")
+        self.setStyleSheet(load_stylesheet(style_path))
 
     def init_ui(self):
         self.tabs = QTabWidget()
