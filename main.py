@@ -80,9 +80,7 @@ class MainWindow(QMainWindow):
         self.history_tab = HistoryTab(self.manager)
 
         self.tabs.addTab(self.task_list_tab, "目前任務")
-        self.tabs.addTab(self.stats_tab, "歷史紀錄與統計")
-
-        self.refresh_tasks()
+        self.tabs.addTab(self.history_tab, "歷史紀錄與統計")
 
 
     def refresh_tasks(self):
