@@ -9,12 +9,20 @@ from ui.task_card import TaskCard
 from ui.task_dialog import TaskDialog
 
 
-def load_stylesheet(file_path):
-    """讀取 QSS 檔案內容"""
+def load_stylesheet(file_name):
+    """使用絕對路徑確保能讀取到 QSS"""
+    # 取得 main.py 的絕對路徑
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    # 組合出 resources/styles/style.qss 的路徑
+    file_path = os.path.join(base_dir, "resources", "styles", file_name)
+    
     if os.path.exists(file_path):
         with open(file_path, "r", encoding="utf-8") as f:
+            print(f"成功載入樣式表: {file_path}") # 除錯用
             return f.read()
-    return ""
+    else:
+        print(f"警告：找不到樣式表檔案！路徑應為: {file_path}")
+        return ""
 
 
 class MainWindow(QMainWindow):
@@ -26,8 +34,9 @@ class MainWindow(QMainWindow):
         
         self.init_ui()
         # 套用外部樣式表
-        style_path = os.path.join("resources", "styles", "style.qss")
-        self.setStyleSheet(load_stylesheet(style_path))
+        style_content = load_stylesheet("style.qss")
+        if style_content:
+            self.setStyleSheet(style_content)
 
     def init_ui(self):
         self.tabs = QTabWidget()
@@ -106,5 +115,9 @@ class MainWindow(QMainWindow):
 if __name__ == "__main__":
     app = QApplication(sys.argv)
     window = MainWindow()
+
+    full_style = load_stylesheet("style.qss")
+    app.setStyleSheet(full_style)
+
     window.show()
     sys.exit(app.exec())
