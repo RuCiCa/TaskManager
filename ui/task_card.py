@@ -80,9 +80,15 @@ class TaskCard(QFrame):
         if self.window():
             self.window().refresh_tasks()
 
-    def on_increment(self):
+def on_increment(self):
+        # 1. 呼叫 manager 更新資料庫
         if self.manager.increment_counting_task(self.task.id):
+            
+            # 2. 【修正點】同步更新卡片自己內部記錄的次數與狀態
+            self.task.increment() 
             self.update_ui_display()
+            
+            # 3. 如果卡片發現自己完成目標了，就叫主視窗立刻重新整理
             if self.task.status == 'COMPLETED':
                 if self.window():
                     self.window().refresh_tasks()
