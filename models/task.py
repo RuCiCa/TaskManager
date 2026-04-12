@@ -10,8 +10,11 @@ class Task:
         self.publisher = data.get('publisher')
         self.publish_time = data.get('publish_time')
         self.deadline = data.get('deadline')
-        self.status = data.get('status', 'PUBLISHED')  # PUBLISHED, ACCEPTED, COMPLETED, FAILED
-        self.frequency = data.get('frequency', 'ONCE') # ONCE, PERIODIC
+        self.status = data.get('status', 'PUBLISHED')
+        self.frequency = data.get('frequency', 'ONCE')
+        self.difficulty = data.get('difficulty', 'MEDIUM')
+        self.task_type = data.get('task_type', '')
+        self.completed_at = data.get('completed_at')
 
     def accept(self):
         """接受任務"""

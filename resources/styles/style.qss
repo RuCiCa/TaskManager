@@ -56,9 +56,31 @@ QHeaderView::section {
 #StatsSummary {
     font-size: 16px;
     font-weight: bold;
-    color: #a6e3a1; /* 亮綠色 */
+    color: #a6e3a1;
     padding: 10px;
     background-color: #313244;
     border-radius: 10px;
     margin-bottom: 10px;
+}
+
+/* 等級標籤 */
+#LevelLabel {
+    font-size: 13px;
+    font-weight: bold;
+    color: #cba6f7;
+}
+
+/* EXP 進度條 */
+#ExpBar {
+    background-color: #313244;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    text-align: center;
+    color: #cdd6f4;
+    font-size: 11px;
+}
+
+#ExpBar::chunk {
+    background-color: #cba6f7;
+    border-radius: 5px;
 }
