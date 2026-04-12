@@ -1,113 +1,207 @@
 from PyQt6.QtWidgets import (QDialog, QVBoxLayout, QHBoxLayout, QLabel,
-                             QLineEdit, QTextEdit, QComboBox, QSpinBox,
-                             QPushButton, QTimeEdit, QDateTimeEdit, QCheckBox,
-                             QMessageBox)
-from PyQt6.QtCore import QTime, QDateTime
+                             QLineEdit, QTextEdit, QSpinBox, QPushButton,
+                             QTimeEdit, QDateTimeEdit, QCheckBox, QButtonGroup,
+                             QWidget, QMessageBox)
+from PyQt6.QtCore import Qt, QDateTime
+
 
 class TaskDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("發布新任務")
-        self.setMinimumWidth(420)
+        self.setWindowFlags(Qt.WindowType.FramelessWindowHint | Qt.WindowType.Dialog)
+        self.setAttribute(Qt.WidgetAttribute.WA_TranslucentBackground)
+        self.setMinimumWidth(460)
         self._manager = getattr(parent, 'manager', None) if parent else None
+        self._drag_offset = None
         self.init_ui()
 
-    def init_ui(self):
-        layout = QVBoxLayout()
+    # ── 拖動支援 ───────────────────────────────────────────────
 
-        # 1. 基本資訊
-        layout.addWidget(QLabel("任務標題:"))
+    def mousePressEvent(self, e):
+        if e.button() == Qt.MouseButton.LeftButton:
+            self._drag_offset = e.globalPosition().toPoint() - self.frameGeometry().topLeft()
+        super().mousePressEvent(e)
+
+    def mouseMoveEvent(self, e):
+        if e.buttons() & Qt.MouseButton.LeftButton and self._drag_offset is not None:
+            self.move(e.globalPosition().toPoint() - self._drag_offset)
+        super().mouseMoveEvent(e)
+
+    def mouseReleaseEvent(self, e):
+        self._drag_offset = None
+        super().mouseReleaseEvent(e)
+
+    # ── UI 建構 ────────────────────────────────────────────────
+
+    def init_ui(self):
+        # 最外層透明 layout
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(0, 0, 0, 0)
+
+        # 可見容器
+        container = QWidget()
+        container.setObjectName("DialogContainer")
+        outer.addWidget(container)
+
+        layout = QVBoxLayout(container)
+        layout.setContentsMargins(16, 12, 16, 16)
+        layout.setSpacing(8)
+
+        # ── 自訂標題列 ──
+        title_bar = QHBoxLayout()
+        title_lbl = QLabel("📋 發布新任務")
+        title_lbl.setObjectName("DialogTitle")
+        close_btn = QPushButton("✖")
+        close_btn.setObjectName("DialogClose")
+        close_btn.setFixedSize(28, 28)
+        close_btn.clicked.connect(self.reject)
+        title_bar.addWidget(title_lbl)
+        title_bar.addStretch()
+        title_bar.addWidget(close_btn)
+        layout.addLayout(title_bar)
+
+        # ── 基本資訊 ──
+        layout.addWidget(self._section("基本資訊"))
+        layout.addWidget(QLabel("任務標題："))
         self.title_input = QLineEdit()
         layout.addWidget(self.title_input)
 
-        layout.addWidget(QLabel("任務內容簡述:"))
+        layout.addWidget(QLabel("任務內容簡述："))
         self.content_input = QLineEdit()
         layout.addWidget(self.content_input)
 
-        layout.addWidget(QLabel("詳細說明:"))
+        layout.addWidget(QLabel("詳細說明："))
         self.desc_input = QTextEdit()
-        self.desc_input.setMaximumHeight(80)
+        self.desc_input.setMaximumHeight(65)
         layout.addWidget(self.desc_input)
 
-        # 2. 類型、頻率、難度 (橫向佈局)
-        type_layout = QHBoxLayout()
+        # ── 任務設定 ──
+        layout.addWidget(self._section("任務設定"))
 
-        vbox_type = QVBoxLayout()
-        vbox_type.addWidget(QLabel("任務類型:"))
-        self.type_combo = QComboBox()
-        self.type_combo.addItems(["COUNTING", "TIMING"])
-        self.type_combo.currentTextChanged.connect(self.toggle_type_fields)
-        vbox_type.addWidget(self.type_combo)
-        type_layout.addLayout(vbox_type)
+        # 類型
+        type_row = QHBoxLayout()
+        type_row.addWidget(self._row_label("類型："))
+        self.type_group = QButtonGroup(self)
+        self.type_group.setExclusive(True)
+        for i, (text, oid) in enumerate([("🔢 計數型", "TypeBtn"), ("⏱ 計時型", "TypeBtn")]):
+            btn = QPushButton(text)
+            btn.setCheckable(True)
+            btn.setObjectName(oid)
+            if i == 0:
+                btn.setChecked(True)
+            self.type_group.addButton(btn, i)
+            type_row.addWidget(btn)
+        type_row.addStretch()
+        self.type_group.idClicked.connect(self._on_type_changed)
+        layout.addLayout(type_row)
 
-        vbox_freq = QVBoxLayout()
-        vbox_freq.addWidget(QLabel("頻率:"))
-        self.freq_combo = QComboBox()
-        self.freq_combo.addItems(["ONCE", "PERIODIC"])
-        vbox_freq.addWidget(self.freq_combo)
-        type_layout.addLayout(vbox_freq)
+        # 頻率
+        freq_row = QHBoxLayout()
+        freq_row.addWidget(self._row_label("頻率："))
+        self.freq_group = QButtonGroup(self)
+        self.freq_group.setExclusive(True)
+        for i, (text, oid) in enumerate([("🔂 單次", "FreqBtn"), ("🔁 週期", "FreqBtn")]):
+            btn = QPushButton(text)
+            btn.setCheckable(True)
+            btn.setObjectName(oid)
+            if i == 0:
+                btn.setChecked(True)
+            self.freq_group.addButton(btn, i)
+            freq_row.addWidget(btn)
+        freq_row.addStretch()
+        layout.addLayout(freq_row)
 
-        vbox_diff = QVBoxLayout()
-        vbox_diff.addWidget(QLabel("難度:"))
-        self.diff_combo = QComboBox()
-        self.diff_combo.addItems(["EASY", "MEDIUM", "HARD"])
-        self.diff_combo.setCurrentText("MEDIUM")
-        vbox_diff.addWidget(self.diff_combo)
-        type_layout.addLayout(vbox_diff)
+        # 難度
+        diff_row = QHBoxLayout()
+        diff_row.addWidget(self._row_label("難度："))
+        self.diff_group = QButtonGroup(self)
+        self.diff_group.setExclusive(True)
+        diff_cfg = [("簡單", "DiffEasy", False), ("中等", "DiffMedium", True), ("困難", "DiffHard", False)]
+        for i, (text, oid, checked) in enumerate(diff_cfg):
+            btn = QPushButton(text)
+            btn.setCheckable(True)
+            btn.setObjectName(oid)
+            btn.setChecked(checked)
+            self.diff_group.addButton(btn, i)
+            diff_row.addWidget(btn)
+        diff_row.addStretch()
+        layout.addLayout(diff_row)
 
-        layout.addLayout(type_layout)
+        # ── 目標設定 ──
+        layout.addWidget(self._section("目標設定"))
 
-        # 3. 動態欄位：計數型 vs 計時型
-        self.count_widget = QLabel("目標次數:")
+        # 計數型欄位
+        self.count_frame = QWidget()
+        count_row = QHBoxLayout(self.count_frame)
+        count_row.setContentsMargins(0, 0, 0, 0)
+        count_row.addWidget(QLabel("🔢  目標次數："))
         self.target_count_input = QSpinBox()
         self.target_count_input.setRange(1, 9999)
+        self.target_count_input.setMinimumHeight(34)
+        count_row.addWidget(self.target_count_input)
+        count_row.addStretch()
+        layout.addWidget(self.count_frame)
 
-        self.time_widget = QLabel("目標時間 (HH:MM:SS):")
+        # 計時型欄位
+        self.time_frame = QWidget()
+        time_row = QHBoxLayout(self.time_frame)
+        time_row.setContentsMargins(0, 0, 0, 0)
+        time_row.addWidget(QLabel("⏱  目標時間："))
         self.target_time_input = QTimeEdit()
         self.target_time_input.setDisplayFormat("HH:mm:ss")
-        self.target_time_input.setHidden(True)
-        self.time_widget.setHidden(True)
+        self.target_time_input.setMinimumHeight(34)
+        time_row.addWidget(self.target_time_input)
+        time_row.addStretch()
+        self.time_frame.setVisible(False)
+        layout.addWidget(self.time_frame)
 
-        layout.addWidget(self.count_widget)
-        layout.addWidget(self.target_count_input)
-        layout.addWidget(self.time_widget)
-        layout.addWidget(self.target_time_input)
-
-        # 4. 截止時間 (可選)
-        deadline_row = QHBoxLayout()
-        self.deadline_check = QCheckBox("設定截止時間:")
+        # ── 截止時間 ──
+        dl_row = QHBoxLayout()
+        dl_row.addWidget(QLabel("📅"))
+        self.deadline_check = QCheckBox("截止時間：")
         self.deadline_input = QDateTimeEdit()
-        self.deadline_input.setDisplayFormat("yyyy-MM-dd HH:mm:ss")
+        self.deadline_input.setDisplayFormat("yyyy-MM-dd HH:mm")
         self.deadline_input.setDateTime(QDateTime.currentDateTime().addDays(1))
         self.deadline_input.setEnabled(False)
+        self.deadline_input.setMinimumHeight(34)
         self.deadline_check.toggled.connect(self.deadline_input.setEnabled)
-        deadline_row.addWidget(self.deadline_check)
-        deadline_row.addWidget(self.deadline_input)
-        layout.addLayout(deadline_row)
+        dl_row.addWidget(self.deadline_check)
+        dl_row.addWidget(self.deadline_input)
+        layout.addLayout(dl_row)
 
-        # 5. 按鈕區 (AI 規劃 + 發布 + 取消)
-        btn_layout = QHBoxLayout()
+        # ── 按鈕列 ──
+        btn_row = QHBoxLayout()
         self.ai_btn = QPushButton("✨ AI 幫我規劃")
+        self.ai_btn.setObjectName("AiBtn")
         self.ai_btn.clicked.connect(self.on_ai_decompose)
-        self.save_btn = QPushButton("發布任務")
+        self.save_btn = QPushButton("✅ 發布任務")
+        self.save_btn.setObjectName("SaveBtn")
         self.save_btn.clicked.connect(self.accept)
-        self.cancel_btn = QPushButton("取消")
-        self.cancel_btn.clicked.connect(self.reject)
+        cancel_btn = QPushButton("取消")
+        cancel_btn.clicked.connect(self.reject)
+        btn_row.addWidget(self.ai_btn)
+        btn_row.addStretch()
+        btn_row.addWidget(self.save_btn)
+        btn_row.addWidget(cancel_btn)
+        layout.addLayout(btn_row)
 
-        btn_layout.addWidget(self.ai_btn)
-        btn_layout.addStretch()
-        btn_layout.addWidget(self.save_btn)
-        btn_layout.addWidget(self.cancel_btn)
-        layout.addLayout(btn_layout)
+    # ── 輔助方法 ───────────────────────────────────────────────
 
-        self.setLayout(layout)
+    def _section(self, text):
+        lbl = QLabel(text)
+        lbl.setObjectName("SectionLabel")
+        return lbl
 
-    def toggle_type_fields(self, task_type):
-        is_counting = (task_type == "COUNTING")
-        self.count_widget.setVisible(is_counting)
-        self.target_count_input.setVisible(is_counting)
-        self.time_widget.setVisible(not is_counting)
-        self.target_time_input.setVisible(not is_counting)
+    def _row_label(self, text):
+        lbl = QLabel(text)
+        lbl.setFixedWidth(48)
+        return lbl
+
+    def _on_type_changed(self, btn_id):
+        self.count_frame.setVisible(btn_id == 0)
+        self.time_frame.setVisible(btn_id == 1)
+
+    # ── AI 規劃 ────────────────────────────────────────────────
 
     def on_ai_decompose(self):
         goal = self.title_input.text().strip()
@@ -121,12 +215,10 @@ class TaskDialog(QDialog):
         try:
             from core.ai_assistant import decompose_task
             tasks = decompose_task(goal)
-
             if not tasks:
                 QMessageBox.warning(self, "AI 錯誤", "AI 未回傳任何任務，請稍後再試。")
                 return
 
-            # 組建預覽文字
             lines = [f"AI 為你規劃了 {len(tasks)} 個子任務：\n"]
             for i, t in enumerate(tasks, 1):
                 lines.append(f"{i}. 【{t.get('difficulty','MEDIUM')}】{t['title']}")
@@ -140,13 +232,15 @@ class TaskDialog(QDialog):
                 for t in tasks:
                     self._manager.publish_new_task(t)
                 QMessageBox.information(self, "完成", f"已批次發布 {len(tasks)} 個任務！")
-                self.reject()  # 關閉彈窗，讓主視窗刷新
+                self.reject()
 
         except Exception as e:
             QMessageBox.critical(self, "AI 錯誤", f"呼叫 AI 時發生錯誤：\n{e}")
         finally:
             self.ai_btn.setEnabled(True)
             self.ai_btn.setText("✨ AI 幫我規劃")
+
+    # ── 取得資料 ───────────────────────────────────────────────
 
     def get_data(self):
         qtime = self.target_time_input.time()
@@ -161,9 +255,9 @@ class TaskDialog(QDialog):
             'content': self.content_input.text(),
             'description': self.desc_input.toPlainText(),
             'publisher': 'Me',
-            'task_type': self.type_combo.currentText(),
-            'frequency': self.freq_combo.currentText(),
-            'difficulty': self.diff_combo.currentText(),
+            'task_type': ['COUNTING', 'TIMING'][self.type_group.checkedId()],
+            'frequency': ['ONCE', 'PERIODIC'][self.freq_group.checkedId()],
+            'difficulty': ['EASY', 'MEDIUM', 'HARD'][self.diff_group.checkedId()],
             'target_count': self.target_count_input.value(),
             'total_seconds': total_seconds,
             'deadline': deadline,

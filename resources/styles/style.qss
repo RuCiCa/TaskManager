@@ -1,49 +1,194 @@
-/* resources/styles/style.qss */
+/* resources/styles/style.qss — Catppuccin Mocha dark theme */
 
-#MainContainer {
-    background-color: #1e1e2e;
-    border-radius: 15px; 
-    border: 2px solid #45475a;
-}
-
+/* ── 全域 ──────────────────────────────────────────────────── */
 QMainWindow, QWidget {
     background-color: #1e1e2e;
     color: #cdd6f4;
     font-family: "Microsoft JhengHei", "Segoe UI";
 }
 
+/* ── 主容器 ─────────────────────────────────────────────────── */
+#MainContainer {
+    background-color: #1e1e2e;
+    border-radius: 0 15px 15px 0;
+    border: 2px solid #45475a;
+    border-left: none;
+}
+
+/* ── 任務卡片 (QFrame) ──────────────────────────────────────── */
 QFrame {
     background-color: #313244;
     border: 2px solid #45475a;
     border-radius: 12px;
     margin: 5px;
 }
-
 QFrame:hover {
     border: 2px solid #89b4fa;
 }
 
+/* ── 拖動把手 ───────────────────────────────────────────────── */
+#DragHandle {
+    background-color: #45475a;
+    border-radius: 0 6px 6px 0;
+    min-width: 14px;
+    max-width: 14px;
+    border: none;
+    margin: 0;
+}
+#DragHandle:hover {
+    background-color: #89b4fa;
+}
+
+/* ── 按鈕通用 ───────────────────────────────────────────────── */
 QPushButton {
     background-color: #89b4fa;
     color: #11111b;
     border-radius: 6px;
-    padding: 8px 15px;
+    padding: 7px 14px;
+    font-weight: bold;
+    border: none;
+}
+QPushButton:hover  { background-color: #b4befe; }
+QPushButton:pressed { background-color: #7287fd; }
+
+/* ── 任務設定 Toggle 按鈕 ────────────────────────────────────── */
+QPushButton#TypeBtn, QPushButton#FreqBtn {
+    background-color: #313244;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    padding: 6px 14px;
+    font-weight: normal;
+}
+QPushButton#TypeBtn:hover, QPushButton#FreqBtn:hover {
+    background-color: #45475a;
+}
+QPushButton#TypeBtn:checked, QPushButton#FreqBtn:checked {
+    background-color: #89b4fa;
+    color: #11111b;
+    border: 1px solid #89b4fa;
     font-weight: bold;
 }
 
-QPushButton:hover {
-    background-color: #b4befe;
+/* 難度按鈕 */
+QPushButton#DiffEasy, QPushButton#DiffMedium, QPushButton#DiffHard {
+    background-color: #313244;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    padding: 6px 14px;
+    font-weight: normal;
+}
+QPushButton#DiffEasy:hover   { background-color: #45475a; }
+QPushButton#DiffMedium:hover { background-color: #45475a; }
+QPushButton#DiffHard:hover   { background-color: #45475a; }
+QPushButton#DiffEasy:checked   { background-color: #a6e3a1; color: #11111b; border-color: #a6e3a1; font-weight: bold; }
+QPushButton#DiffMedium:checked { background-color: #f9e2af; color: #11111b; border-color: #f9e2af; font-weight: bold; }
+QPushButton#DiffHard:checked   { background-color: #f38ba8; color: #11111b; border-color: #f38ba8; font-weight: bold; }
+
+/* AI 按鈕 */
+QPushButton#AiBtn {
+    background-color: #cba6f7;
+    color: #11111b;
+}
+QPushButton#AiBtn:hover { background-color: #d0b4ff; }
+
+/* 發布按鈕 */
+QPushButton#SaveBtn {
+    background-color: #a6e3a1;
+    color: #11111b;
+}
+QPushButton#SaveBtn:hover { background-color: #b8f0b3; }
+
+/* ── Dialog 容器 ────────────────────────────────────────────── */
+#DialogContainer {
+    background-color: #1e1e2e;
+    border-radius: 15px;
+    border: 2px solid #45475a;
 }
 
-/* 表格整體樣式 */
+#DialogTitle {
+    font-size: 14px;
+    font-weight: bold;
+    color: #89b4fa;
+}
+
+#DialogClose {
+    background-color: #f38ba8;
+    color: #11111b;
+    border-radius: 14px;
+    font-weight: bold;
+    padding: 0;
+    border: none;
+}
+#DialogClose:hover { background-color: #eba0ac; }
+
+/* Dialog 分節標題 */
+#SectionLabel {
+    font-size: 11px;
+    font-weight: bold;
+    color: #6c7086;
+    padding-top: 4px;
+}
+
+/* ── QLineEdit / QTextEdit / QSpinBox / QTimeEdit ───────────── */
+QLineEdit, QTextEdit, QSpinBox, QTimeEdit, QDateTimeEdit {
+    background-color: #313244;
+    color: #cdd6f4;
+    border: 1px solid #45475a;
+    border-radius: 6px;
+    padding: 4px 8px;
+}
+QLineEdit:focus, QTextEdit:focus, QSpinBox:focus,
+QTimeEdit:focus, QDateTimeEdit:focus {
+    border: 1px solid #89b4fa;
+}
+
+/* ── QCheckBox ──────────────────────────────────────────────── */
+QCheckBox { color: #cdd6f4; }
+QCheckBox::indicator {
+    width: 16px; height: 16px;
+    border-radius: 4px;
+    border: 1px solid #45475a;
+    background-color: #313244;
+}
+QCheckBox::indicator:checked {
+    background-color: #89b4fa;
+    border-color: #89b4fa;
+}
+
+/* ── QTabWidget ─────────────────────────────────────────────── */
+QTabWidget::pane { border: none; }
+QTabBar::tab {
+    background-color: #313244;
+    color: #6c7086;
+    padding: 6px 12px;
+    border-radius: 6px 6px 0 0;
+    margin-right: 2px;
+    font-size: 12px;
+}
+QTabBar::tab:selected {
+    background-color: #1e1e2e;
+    color: #89b4fa;
+    font-weight: bold;
+}
+QTabBar::tab:hover { color: #cdd6f4; }
+
+/* ── QScrollArea / QScrollBar ───────────────────────────────── */
+QScrollArea { border: none; background-color: transparent; }
+QScrollBar:vertical {
+    background-color: #1e1e2e; width: 8px; border-radius: 4px;
+}
+QScrollBar::handle:vertical {
+    background-color: #45475a; border-radius: 4px; min-height: 20px;
+}
+QScrollBar::handle:vertical:hover { background-color: #585b70; }
+QScrollBar::add-line:vertical, QScrollBar::sub-line:vertical { height: 0; }
+
+/* ── 表格 ───────────────────────────────────────────────────── */
 QTableWidget {
     background-color: #1e1e2e;
     gridline-color: #45475a;
     border: none;
-    border-radius: 8px;
 }
-
-/* 表頭樣式 */
 QHeaderView::section {
     background-color: #313244;
     color: #89b4fa;
@@ -51,36 +196,83 @@ QHeaderView::section {
     border: 1px solid #45475a;
     font-weight: bold;
 }
-
-/* 統計摘要文字 */
-#StatsSummary {
-    font-size: 16px;
-    font-weight: bold;
-    color: #a6e3a1;
-    padding: 10px;
+QTableWidget::item:selected {
     background-color: #313244;
-    border-radius: 10px;
-    margin-bottom: 10px;
+    color: #cdd6f4;
 }
 
-/* 等級標籤 */
+/* ── EXP 系統 ───────────────────────────────────────────────── */
 #LevelLabel {
     font-size: 13px;
     font-weight: bold;
     color: #cba6f7;
 }
-
-/* EXP 進度條 */
 #ExpBar {
     background-color: #313244;
     border: 1px solid #45475a;
     border-radius: 6px;
-    text-align: center;
     color: #cdd6f4;
     font-size: 11px;
 }
-
 #ExpBar::chunk {
     background-color: #cba6f7;
     border-radius: 5px;
+}
+
+/* ── 統計摘要 ───────────────────────────────────────────────── */
+#StatsSummary {
+    font-size: 13px;
+    font-weight: bold;
+    color: #a6e3a1;
+    padding: 8px 10px;
+    background-color: #313244;
+    border-radius: 10px;
+    border: none;
+}
+
+/* ── AI 聊天泡泡 ─────────────────────────────────────────────── */
+#UserBubble {
+    background-color: #89b4fa;
+    color: #11111b;
+    border-radius: 12px 12px 0 12px;
+    padding: 8px 12px;
+    font-size: 12px;
+    border: none;
+}
+#AiBubble {
+    background-color: #313244;
+    color: #cdd6f4;
+    border-radius: 12px 12px 12px 0;
+    padding: 8px 12px;
+    font-size: 12px;
+    border: 1px solid #45475a;
+}
+
+/* ── 行事曆 ─────────────────────────────────────────────────── */
+#DateLabel {
+    font-size: 12px;
+    font-weight: bold;
+    color: #89b4fa;
+    padding: 4px;
+}
+QCalendarWidget QAbstractItemView:enabled {
+    background-color: #1e1e2e;
+    color: #cdd6f4;
+    selection-background-color: #89b4fa;
+    selection-color: #11111b;
+}
+QCalendarWidget QWidget#qt_calendar_navigationbar {
+    background-color: #313244;
+}
+QCalendarWidget QToolButton {
+    background-color: #313244;
+    color: #cdd6f4;
+    border-radius: 4px;
+    padding: 4px;
+    border: none;
+}
+QCalendarWidget QToolButton:hover { background-color: #45475a; }
+QCalendarWidget QMenu {
+    background-color: #313244;
+    color: #cdd6f4;
 }

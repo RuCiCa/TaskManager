@@ -56,6 +56,23 @@ def decompose_task(goal: str) -> list[dict]:
     return tasks
 
 
+def chat(messages: list[dict]) -> str:
+    """
+    多輪對話：傳入完整的訊息歷史，回傳 AI 的最新回覆。
+    """
+    client = _get_client()
+    response = client.messages.create(
+        model="claude-haiku-4-5-20251001",
+        max_tokens=1024,
+        system=(
+            "你是遊戲化任務系統的 AI 助手，協助使用者規劃任務、分析進度、提供激勵與建議。"
+            "語氣活潑、正向，請用繁體中文回覆，回覆盡量簡潔。"
+        ),
+        messages=messages,
+    )
+    return response.content[0].text.strip()
+
+
 def generate_failure_message(task_title: str) -> str:
     """
     根據失敗的任務標題，生成一段帶有幽默感的毒舌鼓勵對話。
